@@ -3,73 +3,49 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Image Studio | CodeStorm Edition</title>
+    <title>AI Studio | CodeStorm</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://js.puter.com/v2/"></script>
-    <link rel="stylesheet" href="style.css">
+    <style>
+        .custom-glow { box-shadow: 0 0 20px rgba(112, 243, 246, 0.2); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
 </head>
-<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
-
-    <header class="border-b border-slate-800 p-6 flex justify-between items-center bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-10">
-        <h1 class="text-2xl font-bold tracking-tighter text-[#70f3f6]">AI IMAGE <span class="text-white">STUDIO</span></h1>
-        <div class="text-xs uppercase tracking-widest text-slate-500">Powered by Imagen 4</div>
+<body class="bg-[#0b0f1a] text-slate-300 min-h-screen font-sans">
+    <header class="p-6 border-b border-slate-800 flex justify-between items-center bg-[#131a2b]/80 backdrop-blur-md sticky top-0 z-50">
+        <h1 class="text-xl font-black tracking-tighter text-[#70f3f6]">CODESTORM <span class="text-white">AI</span></h1>
     </header>
 
-    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
-        
+    <main class="max-w-7xl mx-auto p-4 lg:p-8 grid grid-cols-1 lg:grid-cols-12 gap-8">
         <aside class="lg:col-span-4 space-y-6">
-            <div class="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 shadow-xl">
-                <label class="block text-sm font-medium mb-2 text-slate-400">Prompt Description</label>
-                <textarea id="prompt" rows="4" 
-                    class="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-4 text-white focus:border-[#70f3f6] focus:ring-1 focus:ring-[#70f3f6] outline-none transition-all resize-none"
-                    placeholder="An Egyptian cyberpunk cafe in Alexandria, neon lights, 8k resolution..."></textarea>
-                
-                <div class="mt-4">
-                    <label class="block text-sm font-medium mb-2 text-slate-400">Model Quality</label>
-                    <select id="model-select" class="w-full bg-[#0f172a] border border-slate-700 rounded-lg p-2 text-sm outline-none">
-                        <option value="google/imagen-4.0-preview">Imagen 4 High Quality</option>
-                        <option value="google/imagen-4.0-fast">Imagen 4 Fast</option>
-                    </select>
+            <div class="bg-[#131a2b] p-6 rounded-3xl border border-slate-800 custom-glow">
+                <label class="block text-xs font-bold text-slate-500 uppercase tracking-widest mb-3">Prompt</label>
+                <textarea id="prompt" rows="4" class="w-full bg-[#0b0f1a] border border-slate-700 rounded-2xl p-4 text-white focus:border-[#70f3f6] outline-none transition-all" placeholder="Enter your vision..."></textarea>
+
+                <div class="mt-6">
+                    <label class="block text-xs font-bold text-slate-500 uppercase mb-3">References (Max 14)</label>
+                    <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-2xl p-4 text-center hover:bg-[#1a2336] cursor-pointer transition-all">
+                        <p class="text-xs">Click to add reference images</p>
+                        <input type="file" id="file-input" multiple accept="image/*" class="hidden">
+                    </div>
+                    <div id="ref-preview" class="grid grid-cols-4 gap-2 mt-4 max-h-32 overflow-y-auto hide-scrollbar"></div>
                 </div>
 
-                <button id="generate-btn" class="w-full mt-6 bg-[#70f3f6] text-[#0f172a] font-bold py-4 rounded-xl hover:brightness-110 transition-all flex justify-center items-center gap-2">
-                    Generate Magic
+                <button id="generate-btn" type="button" class="w-full mt-8 bg-[#70f3f6] text-[#0b0f1a] font-black py-4 rounded-2xl hover:scale-[1.02] active:scale-95 transition-all shadow-lg">
+                    GENERATE VISION
                 </button>
             </div>
         </aside>
 
-        <section class="lg:col-span-8">
-            <div id="canvas" class="relative bg-[#1e293b] aspect-square rounded-2xl border-2 border-dashed border-slate-800 flex flex-col items-center justify-center overflow-hidden shadow-inner">
-                <div id="placeholder-text" class="text-slate-500 text-center">
-                    <p class="text-lg">Your creation will appear here</p>
-                    <p class="text-sm">Enter a prompt to start</p>
-                </div>
-                </div>
+        <section class="lg:col-span-8 space-y-4">
+            <div id="canvas" class="bg-[#131a2b] aspect-square rounded-[2.5rem] border border-slate-800 flex items-center justify-center overflow-hidden relative group">
+                <p id="placeholder" class="text-slate-600 font-medium">Your vision will materialize here</p>
+            </div>
+            <div id="controls" class="hidden flex gap-4 justify-center">
+                <button id="download-btn" class="bg-slate-800 px-6 py-2 rounded-xl text-xs font-bold hover:bg-slate-700 transition-all">DOWNLOAD HD</button>
+            </div>
         </section>
-
     </main>
-
     <script src="script.js"></script>
-  <div id="history-sidebar" class="hidden lg:block lg:col-span-2 border-r border-slate-800 pr-4 space-y-4 overflow-y-auto max-h-[80vh]">
-    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Recent</h2>
-    <div id="history-list" class="space-y-4">
-        </div>
-</div>
-
-<div id="action-buttons" class="mt-4 hidden flex justify-center">
-    <button id="download-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-all">
-        <span>Download HD</span>
-    </button>
-</div>
-    <div class="mt-4">
-    <label class="block text-sm font-medium mb-2 text-slate-400">Reference Images (Max 16)</label>
-    <div id="drop-zone" class="border-2 border-dashed border-slate-700 rounded-xl p-4 text-center hover:border-[#70f3f6] cursor-pointer transition-all">
-        <p class="text-xs text-slate-500">Click or Drag to upload</p>
-        <input type="file" id="multi-upload" multiple accept="image/*" class="hidden">
-    </div>
-    <div id="preview-grid" class="grid grid-cols-4 gap-2 mt-3">
-        </div>
-</div>
 </body>
 </html>
-
