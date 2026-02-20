@@ -48,6 +48,55 @@ genBtn.addEventListener('click', async () => {
         addToHistory(src); // Save to sidebar
         setupDownload(src); // Enable download
     } catch (error) { /* ... */ }
+    const uploadInput = document.getElementById('multi-upload');
+const previewGrid = document.getElementById('preview-grid');
+const dropZone = document.getElementById('drop-zone');
+let referenceImages = [];
+
+// Handle File Selection
+dropZone.onclick = () => uploadInput.click();
+
+uploadInput.onchange = async (e) => {
+    const files = Array.from(e.target.files).slice(0, 16); // Limit to 16
+    referenceImages = [];
+    previewGrid.innerHTML = '';
+
+    for (const file of files) {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+            const base64 = event.target.result.split(',')[1];
+            referenceImages.push({
+                data: base64,
+                mime_type: file.type
+            });
+            
+            // Add thumbnail to UI
+            previewGrid.innerHTML += `<img src="${event.target.result}" class="w-full aspect-square object-cover rounded border border-slate-700">`;
+        };
+        reader.readAsDataURL(file);
+    }
+};
+
+// Updated Generate Logic
+genBtn.addEventListener('click', async () => {
+    const prompt = promptInput.value;
+    if (!prompt) return;
+
+    try {
+        const options = {
+            model: "gemini-3-pro-image-preview", // Model that supports multiple references
+            provider: "gemini",
+            // For Puter.js multi-image, we pass them in the 'input_images' array
+            input_images: referenceImages.map(img => img.data), 
+            input_image_mime_types: referenceImages.map(img => img.mime_type)
+        };
+
+        const imageElement = await puter.ai.txt2img(prompt, options);
+        canvas.innerHTML = '';
+        canvas.appendChild(imageElement);
+    } catch (err) {
+        console.error(err);
+    }
 });
 
 // Load history on startup
