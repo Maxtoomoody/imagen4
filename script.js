@@ -1,3 +1,4 @@
+// --- 1. Element Selectors ---
 const genBtn = document.getElementById('generate-btn');
 const enhanceBtn = document.getElementById('enhance-btn');
 const promptInput = document.getElementById('prompt');
@@ -10,22 +11,24 @@ const authStatus = document.getElementById('auth-status');
 
 let uploadedImages = [];
 
-// --- 1. Authentication Monitoring ---
+// --- 2. Authentication UI Sync ---
+// Regularly check if the user is signed in to update the status bar
 function updateAuthUI() {
     if (puter.auth.isSignedIn()) {
         authStatus.innerText = "System Authenticated";
-        authStatus.classList.replace('text-slate-500', 'text-[#70f3f6]');
+        authStatus.style.color = "#70f3f6";
     } else {
         authStatus.innerText = "Sign in to Generate";
+        authStatus.style.color = "#64748b";
     }
 }
 setInterval(updateAuthUI, 2000);
 
-// --- 2. Image Upload Handling ---
+// --- 3. Multi-Reference Upload Logic ---
 dropZone.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
-    const files = Array.from(e.target.files).slice(0, 10);
+    const files = Array.from(e.target.files).slice(0, 10); // Limit to 10 for stability
     uploadedImages = [];
     refPreview.innerHTML = '';
 
@@ -35,40 +38,51 @@ fileInput.onchange = (e) => {
             const base64Data = event.target.result.split(',')[1];
             uploadedImages.push({ data: base64Data, type: file.type });
             
+            // Create thumbnail for the UI
             const img = document.createElement('img');
             img.src = event.target.result;
-            img.className = "w-full aspect-square object-cover rounded-lg border border-slate-700";
+            img.className = "w-full aspect-square object-cover rounded-lg border border-slate-700 hover:border-[#70f3f6] transition-all";
             refPreview.appendChild(img);
         };
         reader.readAsDataURL(file);
     });
 };
 
-// --- 3. Prompt Enhancer Logic ---
+// --- 4. AI Prompt Enhancer (Gemini 3 Flash) ---
 enhanceBtn.onclick = async () => {
-    if (!puter.auth.isSignedIn()) return puter.auth.signIn(); // Fix for 401
-    
+    // SECURITY FIX: Check if signed in before calling AI
+    if (!puter.auth.isSignedIn()) {
+        return puter.auth.signIn();
+    }
+
     const rawText = promptInput.value.trim();
+    if (!rawText && uploadedImages.length === 0) return alert("Enter a prompt or upload an image first.");
+
     enhanceBtn.disabled = true;
-    enhanceBtn.innerText = "✨ ANALYZING...";
+    enhanceBtn.innerText = "✨ ANALYZING VISION...";
 
     try {
+        // Uses Gemini to rewrite the prompt based on text and the first reference image
         const response = await puter.ai.chat(
-            `You are an expert prompt engineer. Enhance this prompt for high-end AI image generation: "${rawText}". Return ONLY the new prompt.`, 
-            { model: 'gemini-3-flash-preview' }
+            `As a professional prompt engineer, rewrite this prompt for Imagen 4 to be cinematic and detailed: "${rawText}". Return ONLY the rewritten prompt.`, 
+            { 
+                model: 'gemini-3-flash-preview',
+                image: uploadedImages.length > 0 ? uploadedImages[0].data : undefined 
+            }
         );
         promptInput.value = response.message.content.trim();
         enhanceBtn.innerText = "✨ PROMPT ENHANCED";
     } catch (err) {
-        alert("Enhancement failed. Check your connection.");
+        console.error(err);
+        enhanceBtn.innerText = "⚠️ ENHANCE FAILED";
     } finally {
         setTimeout(() => { enhanceBtn.disabled = false; enhanceBtn.innerText = "✨ Enhance Prompt"; }, 2000);
     }
 };
 
-// --- 4. Generation Logic (Imagen 4) ---
+// --- 5. Image Generation Logic (Imagen 4) ---
 genBtn.addEventListener('click', async () => {
-    // Critical 401 Fix: Check login before request
+    // SECURITY FIX: Prevents 401 Unauthorized errors
     if (!puter.auth.isSignedIn()) {
         puter.auth.signIn();
         return;
@@ -77,20 +91,22 @@ genBtn.addEventListener('click', async () => {
     const prompt = promptInput.value.trim();
     if (!prompt) return alert("Please enter a prompt!");
 
+    // UI Feedback: Start loading
     genBtn.disabled = true;
     genBtn.innerText = "MATERIALIZING...";
-    canvas.innerHTML = '<div class="w-full h-full shimmer"></div>';
+    canvas.innerHTML = '<div class="w-full h-full animate-pulse bg-slate-800 flex items-center justify-center text-xs text-slate-500 uppercase tracking-widest">Generating Vision...</div>';
     controls.classList.add('hidden');
 
     try {
         const options = {
             provider: 'google',
-            model: 'imagen-4.0-preview', // Ensure exact model name
+            model: 'imagen-4.0-preview', // High-quality Imagen 4
             input_image: uploadedImages.length > 0 ? uploadedImages[0].data : undefined
         };
 
         const image = await puter.ai.txt2img(prompt, options);
         
+        // Render result to canvas
         canvas.innerHTML = '';
         image.className = "w-full h-full object-cover animate-in fade-in duration-700";
         canvas.appendChild(image);
@@ -98,18 +114,19 @@ genBtn.addEventListener('click', async () => {
 
     } catch (err) {
         console.error("Studio Error:", err);
-        canvas.innerHTML = '<p class="text-red-400 p-4 text-center text-xs uppercase font-bold">Generation Failed. Check Credits.</p>';
+        canvas.innerHTML = '<p class="text-red-400 p-4 text-center text-xs uppercase font-bold">Generation Failed. Sign in again or check credits.</p>';
     } finally {
         genBtn.disabled = false;
         genBtn.innerText = "Generate Vision";
     }
 });
 
-// --- 5. Download ---
+// --- 6. Download Feature ---
 document.getElementById('download-btn').onclick = () => {
     const img = canvas.querySelector('img');
+    if (!img) return;
     const link = document.createElement('a');
     link.href = img.src;
-    link.download = `codestorm-${Date.now()}.png`;
+    link.download = `codestorm-vision-${Date.now()}.png`;
     link.click();
 };
