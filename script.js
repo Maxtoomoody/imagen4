@@ -3,6 +3,7 @@
  * Integrated with Puter.js & Imagen 4
  */
 
+// --- Elements ---
 const genBtn = document.getElementById('generate-btn');
 const enhanceBtn = document.getElementById('enhance-btn');
 const promptInput = document.getElementById('prompt');
@@ -15,7 +16,8 @@ const authStatus = document.getElementById('auth-status');
 
 let uploadedImages = [];
 
-// --- 1. Fix for 401 Unauthorized: Sign-In Status ---
+// --- 1. Authentication Check (Prevents 401 Errors) ---
+// We check the status frequently to update the UI
 function updateAuthUI() {
     if (puter.auth.isSignedIn()) {
         authStatus.innerText = "System Authenticated";
@@ -27,7 +29,7 @@ function updateAuthUI() {
 }
 setInterval(updateAuthUI, 2000);
 
-// --- 2. File Upload Handling ---
+// --- 2. Multi-Reference Upload Logic ---
 dropZone.onclick = () => fileInput.click();
 
 fileInput.onchange = (e) => {
@@ -40,6 +42,8 @@ fileInput.onchange = (e) => {
         reader.onload = (event) => {
             const base64Data = event.target.result.split(',')[1];
             uploadedImages.push({ data: base64Data, type: file.type });
+            
+            // Create thumbnail for the UI
             const img = document.createElement('img');
             img.src = event.target.result;
             img.className = "w-full aspect-square object-cover rounded-lg border border-slate-700 hover:border-[#70f3f6] transition-all";
@@ -49,39 +53,43 @@ fileInput.onchange = (e) => {
     });
 };
 
-// --- 3. Prompt Enhancer Logic ---
+// --- 3. Prompt Enhancer (Gemini 3 Flash) ---
 enhanceBtn.onclick = async () => {
-    // Force sign-in to prevent 401 error
+    // Force sign-in to prevent unauthorized errors
     if (!puter.auth.isSignedIn()) {
         return puter.auth.signIn();
     }
 
     const rawText = promptInput.value.trim();
-    if (!rawText && uploadedImages.length === 0) return alert("Enter prompt or image first!");
+    if (!rawText && uploadedImages.length === 0) return alert("Enter prompt or upload image first!");
 
     enhanceBtn.disabled = true;
     enhanceBtn.innerText = "✨ ANALYZING...";
 
     try {
         const response = await puter.ai.chat(
-            `Rewrite this for high-end AI generation: "${rawText}". Use cinematic terms. Return ONLY the new prompt.`, 
+            `You are a high-end prompt engineer. Rewrite this for cinematic Imagen 4 generation: "${rawText}". Return ONLY the new prompt.`, 
             { 
                 model: 'gemini-3-flash-preview',
                 image: uploadedImages.length > 0 ? uploadedImages[0].data : undefined 
             }
         );
         promptInput.value = response.message.content.trim();
-        enhanceBtn.innerText = "✨ PROMPT READY";
+        enhanceBtn.innerText = "✨ PROMPT ENHANCED";
     } catch (err) {
+        console.error(err);
         enhanceBtn.innerText = "⚠️ ERROR";
     } finally {
-        setTimeout(() => { enhanceBtn.disabled = false; enhanceBtn.innerText = "✨ Enhance Prompt"; }, 2000);
+        setTimeout(() => { 
+            enhanceBtn.disabled = false; 
+            enhanceBtn.innerText = "✨ Enhance Prompt"; 
+        }, 2000);
     }
 };
 
-// --- 4. Main Generation Logic ---
+// --- 4. Main Generation Logic (Imagen 4) ---
 genBtn.addEventListener('click', async () => {
-    // MANDATORY: Prevents the 401 Unauthorized "stuck" state
+    // MANDATORY: Check sign-in status before any AI call
     if (!puter.auth.isSignedIn()) {
         puter.auth.signIn();
         return;
@@ -90,9 +98,11 @@ genBtn.addEventListener('click', async () => {
     const prompt = promptInput.value.trim();
     if (!prompt) return alert("System requires a prompt!");
 
+    // Start loading state
     genBtn.disabled = true;
     genBtn.innerText = "MATERIALIZING...";
-    canvas.innerHTML = '<div class="w-full h-full animate-pulse bg-slate-800/50 flex items-center justify-center text-xs text-slate-500 uppercase tracking-widest">Generating...</div>';
+    canvas.innerHTML = '<div class="w-full h-full animate-pulse bg-slate-800/50 flex items-center justify-center text-xs text-slate-500 uppercase tracking-widest">Generating Vision...</div>';
+    controls.classList.add('hidden');
 
     try {
         const options = {
@@ -102,14 +112,16 @@ genBtn.addEventListener('click', async () => {
         };
 
         const image = await puter.ai.txt2img(prompt, options);
+        
+        // Render Result
         canvas.innerHTML = '';
-        image.className = "w-full h-full object-cover animate-in fade-in duration-700";
+        image.className = "w-full h-full object-cover animate-in fade-in duration-1000";
         canvas.appendChild(image);
         controls.classList.remove('hidden');
 
     } catch (err) {
         console.error("Studio Error:", err);
-        canvas.innerHTML = '<p class="text-red-400 p-4 text-center text-xs font-bold uppercase">FAILED: Check Credits/Sign-in</p>';
+        canvas.innerHTML = '<p class="text-red-400 p-4 text-center text-xs font-bold uppercase tracking-widest">Failed: Check Credits or Login</p>';
     } finally {
         genBtn.disabled = false;
         genBtn.innerText = "Generate Vision";
@@ -121,6 +133,6 @@ document.getElementById('download-btn').onclick = () => {
     const img = canvas.querySelector('img');
     const link = document.createElement('a');
     link.href = img.src;
-    link.download = `codestorm-${Date.now()}.png`;
+    link.download = `codestorm-vision-${Date.now()}.png`;
     link.click();
 };
