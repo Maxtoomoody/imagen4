@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Image Studio | CodeStorm Edition</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://js.puter.com/v2/"></script>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body class="bg-[#0f172a] text-slate-200 min-h-screen font-sans">
+
+    <header class="border-b border-slate-800 p-6 flex justify-between items-center bg-[#1e293b]/50 backdrop-blur-md sticky top-0 z-10">
+        <h1 class="text-2xl font-bold tracking-tighter text-[#70f3f6]">AI IMAGE <span class="text-white">STUDIO</span></h1>
+        <div class="text-xs uppercase tracking-widest text-slate-500">Powered by Imagen 4</div>
+    </header>
+
+    <main class="max-w-7xl mx-auto p-6 grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <aside class="lg:col-span-4 space-y-6">
+            <div class="bg-[#1e293b] p-6 rounded-2xl border border-slate-800 shadow-xl">
+                <label class="block text-sm font-medium mb-2 text-slate-400">Prompt Description</label>
+                <textarea id="prompt" rows="4" 
+                    class="w-full bg-[#0f172a] border border-slate-700 rounded-xl p-4 text-white focus:border-[#70f3f6] focus:ring-1 focus:ring-[#70f3f6] outline-none transition-all resize-none"
+                    placeholder="An Egyptian cyberpunk cafe in Alexandria, neon lights, 8k resolution..."></textarea>
+                
+                <div class="mt-4">
+                    <label class="block text-sm font-medium mb-2 text-slate-400">Model Quality</label>
+                    <select id="model-select" class="w-full bg-[#0f172a] border border-slate-700 rounded-lg p-2 text-sm outline-none">
+                        <option value="google/imagen-4.0-preview">Imagen 4 High Quality</option>
+                        <option value="google/imagen-4.0-fast">Imagen 4 Fast</option>
+                    </select>
+                </div>
+
+                <button id="generate-btn" class="w-full mt-6 bg-[#70f3f6] text-[#0f172a] font-bold py-4 rounded-xl hover:brightness-110 transition-all flex justify-center items-center gap-2">
+                    Generate Magic
+                </button>
+            </div>
+        </aside>
+
+        <section class="lg:col-span-8">
+            <div id="canvas" class="relative bg-[#1e293b] aspect-square rounded-2xl border-2 border-dashed border-slate-800 flex flex-col items-center justify-center overflow-hidden shadow-inner">
+                <div id="placeholder-text" class="text-slate-500 text-center">
+                    <p class="text-lg">Your creation will appear here</p>
+                    <p class="text-sm">Enter a prompt to start</p>
+                </div>
+                </div>
+        </section>
+
+    </main>
+
+    <script src="script.js"></script>
+  <div id="history-sidebar" class="hidden lg:block lg:col-span-2 border-r border-slate-800 pr-4 space-y-4 overflow-y-auto max-h-[80vh]">
+    <h2 class="text-xs font-bold uppercase tracking-widest text-slate-500 mb-4">Recent</h2>
+    <div id="history-list" class="space-y-4">
+        </div>
+</div>
+
+<div id="action-buttons" class="mt-4 hidden flex justify-center">
+    <button id="download-btn" class="bg-slate-700 hover:bg-slate-600 text-white px-6 py-2 rounded-lg flex items-center gap-2 transition-all">
+        <span>Download HD</span>
+    </button>
+</div>
+</body>
+</html>
